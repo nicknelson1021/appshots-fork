@@ -7,6 +7,7 @@
 import type React from "react";
 import { getTextSelectionStyles } from "./utils";
 import { Z_INDEX } from "./constants";
+import { normalizeRichTextHighlights } from "../../lib/rich-text-highlight";
 
 interface TextElementProps {
   /** Type of text element */
@@ -70,6 +71,7 @@ export const TextElement = ({
   onMouseDown,
 }: TextElementProps) => {
   const isHeadline = type === "headline";
+  const normalizedContent = normalizeRichTextHighlights(content);
 
   return (
     <div
@@ -95,7 +97,7 @@ export const TextElement = ({
         ...getTextSelectionStyles(isSelected),
       }}
       onMouseDown={isInteractive ? onMouseDown : undefined}
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: normalizedContent }}
     />
   );
 };

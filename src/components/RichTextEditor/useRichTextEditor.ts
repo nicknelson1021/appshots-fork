@@ -6,8 +6,16 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import type { ActiveStyles } from "./types";
-import { DEFAULT_ACTIVE_STYLES, DEFAULT_TEXT_COLOR } from "./constants";
+import {
+  DEFAULT_ACTIVE_STYLES,
+  DEFAULT_BACKGROUND_COLOR,
+  DEFAULT_TEXT_COLOR,
+} from "./constants";
 import { isContentEmpty, getActiveStyles, executeCommand } from "./utils";
+import {
+  normalizeRichTextHighlightRoot,
+  normalizeRichTextHighlights,
+} from "../../lib/rich-text-highlight";
 
 interface UseRichTextEditorOptions {
   /** Initial/controlled HTML value */
@@ -21,6 +29,8 @@ interface UseRichTextEditorReturn {
   editorRef: React.RefObject<HTMLDivElement | null>;
   /** Current text color */
   textColor: string;
+  /** Current text highlight color */
+  backgroundColor: string;
   /** Whether the editor is empty */
   isEmpty: boolean;
   /** Current active formatting styles */
@@ -31,6 +41,8 @@ interface UseRichTextEditorReturn {
   handleInput: () => void;
   /** Handle color picker change */
   handleColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Handle highlight color picker change */
+  handleBackgroundColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   /** Trigger change callback */
   triggerChange: () => void;
   /** Update active styles from selection */
@@ -61,6 +73,9 @@ export const useRichTextEditor = ({
 }: UseRichTextEditorOptions): UseRichTextEditorReturn => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
+  const [backgroundColor, setBackgroundColor] = useState(
+    DEFAULT_BACKGROUND_COLOR,
+  );
   const [isEmpty, setIsEmpty] = useState(true);
   const [activeStyles, setActiveStyles] = useState<ActiveStyles>(
     DEFAULT_ACTIVE_STYLES,
@@ -74,6 +89,7 @@ export const useRichTextEditor = ({
   // Trigger onChange callback
   const triggerChange = useCallback(() => {
     if (editorRef.current) {
+      normalizeRichTextHighlightRoot(editorRef.current);
       const html = editorRef.current.innerHTML;
       setIsEmpty(isContentEmpty(html));
       onChange(html);
@@ -107,11 +123,26 @@ export const useRichTextEditor = ({
     [execCommand],
   );
 
+  // Handle highlight color change
+  const handleBackgroundColorChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const color = e.target.value;
+      setBackgroundColor(color);
+      execCommand("hiliteColor", color);
+    },
+    [execCommand],
+  );
+
   // Sync external value changes
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
-      setIsEmpty(isContentEmpty(value));
+    const normalizedValue = normalizeRichTextHighlights(value);
+
+    if (
+      editorRef.current &&
+      editorRef.current.innerHTML !== normalizedValue
+    ) {
+      editorRef.current.innerHTML = normalizedValue;
+      setIsEmpty(isContentEmpty(normalizedValue));
     }
   }, [value]);
 
@@ -132,11 +163,13 @@ export const useRichTextEditor = ({
   return {
     editorRef,
     textColor,
+    backgroundColor,
     isEmpty,
     activeStyles,
     execCommand,
     handleInput,
     handleColorChange,
+    handleBackgroundColorChange,
     triggerChange,
     updateActiveStyles,
   };

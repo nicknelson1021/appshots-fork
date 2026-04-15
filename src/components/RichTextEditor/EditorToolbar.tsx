@@ -11,6 +11,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Highlighter,
+  Palette,
   Sparkles,
 } from "lucide-react";
 import type { ActiveStyles } from "./types";
@@ -24,10 +26,14 @@ interface EditorToolbarProps {
   activeStyles: ActiveStyles;
   /** Current text color */
   textColor: string;
+  /** Current highlight color */
+  backgroundColor: string;
   /** Execute formatting command */
   onCommand: (command: string, value?: string) => void;
-  /** Color change handler */
+  /** Text color change handler */
   onColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Highlight color change handler */
+  onBackgroundColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 /**
@@ -35,7 +41,7 @@ interface EditorToolbarProps {
  *
  * Contains all formatting buttons organized into groups:
  * - Text formatting (Bold, Italic, Underline)
- * - Color picker
+ * - Color pickers with custom tooltips
  * - Alignment (Left, Center, Right)
  * - AI Assist (placeholder)
  *
@@ -52,8 +58,10 @@ interface EditorToolbarProps {
 export const EditorToolbar = ({
   activeStyles,
   textColor,
+  backgroundColor,
   onCommand,
   onColorChange,
+  onBackgroundColorChange,
 }: EditorToolbarProps) => {
   // Prevent toolbar clicks from stealing focus
   const preventFocus = (e: React.MouseEvent) => e.preventDefault();
@@ -64,7 +72,7 @@ export const EditorToolbar = ({
       <ToolbarButton
         onClick={() => onCommand("bold")}
         active={activeStyles.bold}
-        title="Bold (Ctrl+B)"
+        tooltip="Bold (Ctrl+B)"
         onMouseDown={preventFocus}
       >
         <Bold size={ICON_SIZE} />
@@ -72,7 +80,7 @@ export const EditorToolbar = ({
       <ToolbarButton
         onClick={() => onCommand("italic")}
         active={activeStyles.italic}
-        title="Italic (Ctrl+I)"
+        tooltip="Italic (Ctrl+I)"
         onMouseDown={preventFocus}
       >
         <Italic size={ICON_SIZE} />
@@ -80,7 +88,7 @@ export const EditorToolbar = ({
       <ToolbarButton
         onClick={() => onCommand("underline")}
         active={activeStyles.underline}
-        title="Underline (Ctrl+U)"
+        tooltip="Underline (Ctrl+U)"
         onMouseDown={preventFocus}
       >
         <Underline size={ICON_SIZE} />
@@ -88,11 +96,20 @@ export const EditorToolbar = ({
 
       <ToolbarSeparator />
 
-      {/* Color Picker */}
+      {/* Color Pickers */}
       <ColorPicker
         value={textColor}
         onChange={onColorChange}
         onMouseDown={preventFocus}
+        tooltip="Text Color"
+        icon={<Palette size={ICON_SIZE} />}
+      />
+      <ColorPicker
+        value={backgroundColor}
+        onChange={onBackgroundColorChange}
+        onMouseDown={preventFocus}
+        tooltip="Text Background Color"
+        icon={<Highlighter size={ICON_SIZE} />}
       />
 
       <ToolbarSeparator />
@@ -101,7 +118,7 @@ export const EditorToolbar = ({
       <ToolbarButton
         onClick={() => onCommand("justifyLeft")}
         active={activeStyles.alignLeft}
-        title="Align Left"
+        tooltip="Align Left"
         onMouseDown={preventFocus}
       >
         <AlignLeft size={ICON_SIZE} />
@@ -109,7 +126,7 @@ export const EditorToolbar = ({
       <ToolbarButton
         onClick={() => onCommand("justifyCenter")}
         active={activeStyles.alignCenter}
-        title="Align Center"
+        tooltip="Align Center"
         onMouseDown={preventFocus}
       >
         <AlignCenter size={ICON_SIZE} />
@@ -117,7 +134,7 @@ export const EditorToolbar = ({
       <ToolbarButton
         onClick={() => onCommand("justifyRight")}
         active={activeStyles.alignRight}
-        title="Align Right"
+        tooltip="Align Right"
         onMouseDown={preventFocus}
       >
         <AlignRight size={ICON_SIZE} />
@@ -128,7 +145,7 @@ export const EditorToolbar = ({
       {/* AI Assist (placeholder) */}
       <ToolbarButton
         onClick={() => {}}
-        title="AI Assist (Coming Soon)"
+        tooltip="AI Assist (Coming Soon)"
         onMouseDown={preventFocus}
       >
         <Sparkles size={ICON_SIZE} />

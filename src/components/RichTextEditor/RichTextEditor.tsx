@@ -5,7 +5,7 @@
  *
  * Features:
  * - Bold, italic, underline formatting
- * - Text color selection
+ * - Text and highlight color selection
  * - Text alignment (left, center, right)
  * - Placeholder support
  * - Selection-aware toolbar state
@@ -47,11 +47,13 @@ export const RichTextEditor = ({
   const {
     editorRef,
     textColor,
+    backgroundColor,
     isEmpty,
     activeStyles,
     execCommand,
     handleInput,
     handleColorChange,
+    handleBackgroundColorChange,
     triggerChange,
   } = useRichTextEditor({ value, onChange });
 
@@ -60,8 +62,10 @@ export const RichTextEditor = ({
       <EditorToolbar
         activeStyles={activeStyles}
         textColor={textColor}
+        backgroundColor={backgroundColor}
         onCommand={execCommand}
         onColorChange={handleColorChange}
+        onBackgroundColorChange={handleBackgroundColorChange}
       />
       <EditorContent
         editorRef={editorRef}

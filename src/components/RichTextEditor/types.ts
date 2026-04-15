@@ -24,8 +24,8 @@ export interface ToolbarButtonConfig {
   id: string;
   /** execCommand command name */
   command: string;
-  /** Button title/tooltip */
-  title: string;
+  /** Tooltip label */
+  tooltip: string;
   /** Key in ActiveStyles to check for active state */
   activeKey?: keyof ActiveStyles;
 }

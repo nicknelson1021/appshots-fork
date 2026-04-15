@@ -9,7 +9,7 @@
  */
 export const STYLES = {
   /** Sidebar container */
-  sidebar: "w-80 shrink-0 border-l border-white/10 bg-[#141414] overflow-y-auto",
+  sidebar: "w-96 shrink-0 border-l border-white/10 bg-[#141414] overflow-y-auto",
 
   /** Content wrapper */
   content: "p-4 space-y-6",

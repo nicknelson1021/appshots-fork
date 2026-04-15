@@ -4,6 +4,7 @@
  * Individual button in the editor toolbar with active state styling.
  */
 
+import { Tooltip } from "./Tooltip";
 import { STYLES } from "./constants";
 
 interface ToolbarButtonProps {
@@ -12,7 +13,7 @@ interface ToolbarButtonProps {
   /** Whether button is in active state */
   active?: boolean;
   /** Tooltip text */
-  title: string;
+  tooltip: string;
   /** Button content (icon) */
   children: React.ReactNode;
   /** Mouse down handler (for focus management) */
@@ -31,7 +32,7 @@ interface ToolbarButtonProps {
  * <ToolbarButton
  *   onClick={() => execCommand("bold")}
  *   active={activeStyles.bold}
- *   title="Bold (Ctrl+B)"
+ *   tooltip="Bold (Ctrl+B)"
  *   onMouseDown={preventFocus}
  * >
  *   <Bold size={16} />
@@ -40,18 +41,21 @@ interface ToolbarButtonProps {
 export const ToolbarButton = ({
   onClick,
   active = false,
-  title,
+  tooltip,
   children,
   onMouseDown,
 }: ToolbarButtonProps) => (
-  <button
-    onMouseDown={onMouseDown}
-    onClick={onClick}
-    title={title}
-    className={`${STYLES.toolbarButton} ${
-      active ? STYLES.toolbarButtonActive : STYLES.toolbarButtonInactive
-    }`}
-  >
-    {children}
-  </button>
+  <Tooltip content={tooltip}>
+    <button
+      type="button"
+      onMouseDown={onMouseDown}
+      onClick={onClick}
+      aria-label={tooltip}
+      className={`${STYLES.toolbarButton} ${
+        active ? STYLES.toolbarButtonActive : STYLES.toolbarButtonInactive
+      }`}
+    >
+      {children}
+    </button>
+  </Tooltip>
 );

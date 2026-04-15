@@ -3,12 +3,20 @@
  * Parses HTML formatted text and renders it on a canvas with proper styling
  */
 
+import {
+  RICH_TEXT_HIGHLIGHT_HEIGHT_EM,
+  RICH_TEXT_HIGHLIGHT_RADIUS_EM,
+  RICH_TEXT_HIGHLIGHT_SPREAD_EM,
+  RICH_TEXT_HIGHLIGHT_TOP_OFFSET_EM,
+} from "./rich-text-highlight";
+
 export interface StyledSegment {
   text: string;
   bold: boolean;
   italic: boolean;
   underline: boolean;
   color: string;
+  backgroundColor: string | null;
 }
 
 export interface RenderOptions {
@@ -35,7 +43,16 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
   const root = doc.body.firstChild;
   
   if (!root) {
-    return [{ text: html, bold: false, italic: false, underline: false, color: defaultColor }];
+    return [
+      {
+        text: html,
+        bold: false,
+        italic: false,
+        underline: false,
+        color: defaultColor,
+        backgroundColor: null,
+      },
+    ];
   }
 
   interface StyleState {
@@ -43,6 +60,7 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
     italic: boolean;
     underline: boolean;
     color: string;
+    backgroundColor: string | null;
   }
 
   // Recursively walk the DOM tree
@@ -56,6 +74,7 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
           italic: state.italic,
           underline: state.underline,
           color: state.color,
+          backgroundColor: state.backgroundColor,
         });
       }
       return;
@@ -86,6 +105,12 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
           if (fontColor) {
             childState.color = fontColor;
           }
+          if (element.style.backgroundColor) {
+            childState.backgroundColor = element.style.backgroundColor;
+          }
+          break;
+        case "mark":
+          childState.backgroundColor = element.style.backgroundColor || "yellow";
           break;
         case "span":
           // Check inline styles
@@ -102,6 +127,9 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
           if (style.color) {
             childState.color = style.color;
           }
+          if (style.backgroundColor) {
+            childState.backgroundColor = style.backgroundColor;
+          }
           break;
         case "br":
           segments.push({
@@ -110,6 +138,7 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
             italic: state.italic,
             underline: state.underline,
             color: state.color,
+            backgroundColor: state.backgroundColor,
           });
           return;
       }
@@ -126,6 +155,7 @@ export function parseRichText(html: string, defaultColor: string): StyledSegment
     italic: false,
     underline: false,
     color: defaultColor,
+    backgroundColor: null,
   });
 
   return segments;
@@ -170,6 +200,22 @@ export function renderRichText(
   const measureSegment = (segment: StyledSegment): number => {
     ctx.font = buildFont(segment);
     return ctx.measureText(segment.text).width;
+  };
+
+  const drawRoundedHighlight = (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+    color: string,
+  ) => {
+    const clampedRadius = Math.min(radius, width / 2, height / 2);
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, clampedRadius);
+    ctx.fillStyle = color;
+    ctx.fill();
   };
 
   // Split segments into words while preserving styling
@@ -289,29 +335,103 @@ export function renderRichText(
         lineX = x - maxWidth / 2; // left align from center point
     }
 
-    // Render each word's segments
+    // Resolve line segments before drawing so highlight backgrounds can span
+    // multiple words and spaces on the same line.
+    interface PositionedSegment {
+      segment: StyledSegment;
+      x: number;
+      width: number;
+    }
+
+    const positionedSegments: PositionedSegment[] = [];
     let currentX = lineX;
-    
+
     for (const word of line.words) {
       for (const segment of word.segments) {
         ctx.font = buildFont(segment);
-        ctx.fillStyle = segment.color;
-        ctx.fillText(segment.text, currentX, currentY);
+        const width = ctx.measureText(segment.text).width;
+        positionedSegments.push({ segment, x: currentX, width });
+        currentX += width;
+      }
+    }
 
-        const segmentWidth = ctx.measureText(segment.text).width;
+    const highlightSpread = fontSize * RICH_TEXT_HIGHLIGHT_SPREAD_EM;
+    const highlightRadius = fontSize * RICH_TEXT_HIGHLIGHT_RADIUS_EM;
+    const highlightY =
+      currentY + fontSize * RICH_TEXT_HIGHLIGHT_TOP_OFFSET_EM - highlightSpread;
+    const highlightHeight =
+      fontSize * RICH_TEXT_HIGHLIGHT_HEIGHT_EM + highlightSpread * 2;
 
-        // Draw underline if needed
-        if (segment.underline) {
-          const underlineY = currentY + fontSize * 0.9;
-          ctx.strokeStyle = segment.color;
-          ctx.lineWidth = Math.max(1, fontSize / 15);
-          ctx.beginPath();
-          ctx.moveTo(currentX, underlineY);
-          ctx.lineTo(currentX + segmentWidth, underlineY);
-          ctx.stroke();
+    interface HighlightRun {
+      x: number;
+      width: number;
+      color: string;
+    }
+
+    const highlightRuns: HighlightRun[] = [];
+    let currentRun: HighlightRun | null = null;
+
+    for (const positionedSegment of positionedSegments) {
+      const { segment, x, width } = positionedSegment;
+
+      if (!segment.backgroundColor || width <= 0) {
+        if (currentRun) {
+          highlightRuns.push(currentRun);
+          currentRun = null;
         }
+        continue;
+      }
 
-        currentX += segmentWidth;
+      if (
+        currentRun &&
+        currentRun.color === segment.backgroundColor &&
+        Math.abs(currentRun.x + currentRun.width - x) < 0.01
+      ) {
+        currentRun.width += width;
+        continue;
+      }
+
+      if (currentRun) {
+        highlightRuns.push(currentRun);
+      }
+
+      currentRun = {
+        x,
+        width,
+        color: segment.backgroundColor,
+      };
+    }
+
+    if (currentRun) {
+      highlightRuns.push(currentRun);
+    }
+
+    for (const highlightRun of highlightRuns) {
+      drawRoundedHighlight(
+        highlightRun.x - highlightSpread,
+        highlightY,
+        highlightRun.width + highlightSpread * 2,
+        highlightHeight,
+        highlightRadius,
+        highlightRun.color,
+      );
+    }
+
+    for (const positionedSegment of positionedSegments) {
+      const { segment, x, width } = positionedSegment;
+
+      ctx.fillStyle = segment.color;
+      ctx.fillText(segment.text, x, currentY);
+
+      // Draw underline if needed
+      if (segment.underline) {
+        const underlineY = currentY + fontSize * 0.9;
+        ctx.strokeStyle = segment.color;
+        ctx.lineWidth = Math.max(1, fontSize / 15);
+        ctx.beginPath();
+        ctx.moveTo(x, underlineY);
+        ctx.lineTo(x + width, underlineY);
+        ctx.stroke();
       }
     }
 

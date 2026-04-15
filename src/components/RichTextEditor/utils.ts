@@ -51,5 +51,15 @@ export const getActiveStyles = (): ActiveStyles => ({
  * executeCommand("foreColor", "#ff0000") // Set text color
  */
 export const executeCommand = (command: string, value?: string): void => {
+  if (command === "hiliteColor" && value) {
+    document.execCommand("styleWithCSS", false, "true");
+    const applied = document.execCommand("hiliteColor", false, value);
+    if (!applied) {
+      document.execCommand("backColor", false, value);
+    }
+    document.execCommand("styleWithCSS", false, "false");
+    return;
+  }
+
   document.execCommand(command, false, value);
 };

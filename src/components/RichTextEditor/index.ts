@@ -22,6 +22,7 @@
  *   EditorToolbar,
  *   EditorContent,
  *   ToolbarButton,
+ *   Tooltip,
  * } from './components/RichTextEditor';
  */
 
@@ -34,6 +35,7 @@ export { EditorContent } from "./EditorContent";
 export { ToolbarButton } from "./ToolbarButton";
 export { ToolbarSeparator } from "./ToolbarSeparator";
 export { ColorPicker } from "./ColorPicker";
+export { Tooltip } from "./Tooltip";
 
 // Hook
 export { useRichTextEditor } from "./useRichTextEditor";

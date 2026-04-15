@@ -13,3 +13,12 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+[data-rich-text-highlight="true"] {
+  border-radius: var(--rich-text-highlight-radius, 0.12em);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  box-shadow:
+    0 0 0 var(--rich-text-highlight-spread, 0.05em)
+    var(--rich-text-highlight-color, currentColor);
+}

@@ -50,6 +50,8 @@ interface EditorContextType {
   // State
   isFontPickerOpen: boolean;
   setIsFontPickerOpen: (open: boolean) => void;
+  isStarModalOpen: boolean;
+  setIsStarModalOpen: (open: boolean) => void;
   selectedDeviceId: string;
   setSelectedDeviceId: (id: string) => void;
   selectedColorId: string;
@@ -268,6 +270,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize state from persisted values or defaults
   const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
+  const [isStarModalOpen, setIsStarModalOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceIdState] = useState(
     activeProject.selectedDeviceId,
   );
@@ -942,13 +945,14 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const handleExport = () => {
-    exportScreenshots({
+    void exportScreenshots({
       screenshots,
       exportSize,
       previewDimensions,
       headlineFontSize,
       subheadlineFontSize,
     });
+    setIsStarModalOpen(true);
   };
 
   /**
@@ -967,6 +971,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setHeadlineFontSizeState(defaultProject.headlineFontSize);
     setSubheadlineFontSizeState(defaultProject.subheadlineFontSize);
     setSelectedElement(null);
+    setIsStarModalOpen(false);
   };
 
   return (
@@ -983,6 +988,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
 
         isFontPickerOpen,
         setIsFontPickerOpen,
+        isStarModalOpen,
+        setIsStarModalOpen,
         selectedDeviceId,
         setSelectedDeviceId,
         selectedColorId,

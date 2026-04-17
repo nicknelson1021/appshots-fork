@@ -57,22 +57,24 @@ export const DeviceContainer = ({
         zIndex,
         filter: getDropShadowFilter(device.shadow),
         perspective: is3D ? "1200px" : undefined,
-        ...getDeviceSelectionStyles(isSelected),
       }}
       onMouseDown={isInteractive ? onMouseDown : undefined}
       onClick={(e) => e.stopPropagation()}
     >
       <div
+        className="relative"
         style={
           is3D
             ? {
                 transform: `rotateY(${device.rotateY}deg) rotateX(${device.rotateX}deg)`,
                 transformStyle: "preserve-3d",
                 transformOrigin: "center center",
+                ...getDeviceSelectionStyles(isSelected),
               }
             : {
                 transform: `rotate(${device.rotation}deg)`,
                 transformOrigin: "center center",
+                ...getDeviceSelectionStyles(isSelected),
               }
         }
       >
@@ -89,8 +91,8 @@ export const DeviceContainer = ({
             selectedColor={selectedColor}
           />
         )}
+        {isSelected && <SelectionHandles />}
       </div>
-      {isSelected && <SelectionHandles />}
     </div>
   );
 };

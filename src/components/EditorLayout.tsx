@@ -2,7 +2,9 @@ import { LeftSidebar } from "./LeftSidebar";
 import { RightSidebar } from "./RightSidebar";
 import { CanvasPreview } from "./CanvasPreview";
 import { FontPicker } from "./FontPicker";
+import { GitHubStarModal } from "./GitHubStarModal";
 import { useEditor } from "../context/EditorContext";
+import { GITHUB_REPO_URL } from "../constants";
 import { Star, X } from "lucide-react";
 import { useState } from "react";
 
@@ -10,6 +12,8 @@ export const EditorLayout = () => {
   const {
     isFontPickerOpen,
     setIsFontPickerOpen,
+    isStarModalOpen,
+    setIsStarModalOpen,
     activeScreenshot,
     updateActiveScreenshot,
   } = useEditor();
@@ -24,7 +28,7 @@ export const EditorLayout = () => {
           <span>
             AppShots is open source —{" "}
             <a
-              href="https://github.com/oyeolamilekan/appshots"
+              href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-white underline underline-offset-2 hover:text-zinc-100"
@@ -51,6 +55,10 @@ export const EditorLayout = () => {
           onSelect={(fontFamily: string) =>
             updateActiveScreenshot({ fontFamily })
           }
+        />
+        <GitHubStarModal
+          isOpen={isStarModalOpen}
+          onClose={() => setIsStarModalOpen(false)}
         />
       </div>
     </div>

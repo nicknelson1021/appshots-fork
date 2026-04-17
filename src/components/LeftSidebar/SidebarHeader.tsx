@@ -17,7 +17,9 @@ import { STYLES } from "./constants";
  */
 export const SidebarHeader = () => (
   <div className={STYLES.header}>
-    <h1 className="text-lg font-semibold">App Store Editor</h1>
-    <p className="text-xs text-gray-400 mt-1">Create beautiful screenshots</p>
+    <h1 className="text-lg font-semibold">AppShots Editor</h1>
+    <p className="text-xs text-gray-400 mt-1">
+      Create App Store and Google Play screenshots
+    </p>
   </div>
 );

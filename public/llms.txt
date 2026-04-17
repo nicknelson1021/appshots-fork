@@ -1,6 +1,6 @@
 # AppShots App Store Screenshot Generator
 
-> AppShots is a free, open-source web tool for creating professional, high-converting screenshots for the Apple App Store and Google Play Store. It provides a full-featured drag-and-drop editor with device mockups, rich text, overlays, and batch export.
+> AppShots is a free, open-source web tool for creating professional, high-converting screenshots for the Apple App Store and Google Play Store. It provides a full-featured drag-and-drop editor with multi-device layouts, cross-screen compositions, rich text highlights, overlays, and batch export.
 
 Website: https://appshots.appstate.xyz
 GitHub: https://github.com/oyeolamilekan/appshots
@@ -15,6 +15,8 @@ AppShots lets mobile developers and marketers design polished app store screensh
 ### Device Frames
 - 6 realistic device mockups: iPhone 15 Pro Max, iPhone 15 Pro, iPhone 14, iPad Pro 12.9", Samsung Galaxy S24 Ultra, Samsung Galaxy Tab S9
 - Multiple color options per device (Black Titanium, Natural, Blue, White, Midnight, Purple, Red, Space Gray, Silver, Titanium Violet, Titanium Yellow, Graphite, Beige)
+- Multiple independent devices inside a single screenshot
+- Cross-screen device overflow between adjacent screenshots
 - Flat (2D) and 3D rendering modes
 - 3D rotation controls for Rotate Y and Rotate X
 - Accurate camera elements (Dynamic Island, notch, punch-hole)
@@ -25,7 +27,8 @@ AppShots lets mobile developers and marketers design polished app store screensh
 - Global text color picker
 
 ### Rich Text & Fonts
-- Rich text editor for headlines and subheadlines with bold, italic, underline, text color, and alignment
+- Rich text editor for headlines and subheadlines with bold, italic, underline, text color, alignment, and text background highlights
+- Rounded highlight styling preserved in the editor, preview, and export
 - Google Fonts integration with search and preview
 - Independent font size sliders for headline and subheadline
 - Width control for text blocks
@@ -54,13 +57,16 @@ AppShots lets mobile developers and marketers design polished app store screensh
 - Batch export: all screenshots at once (ZIP for multiple, PNG for single)
 - 4 export size presets: 6.7" iPhone (1284×2778), 6.5" iPhone (1242×2688), 5.5" iPhone (1242×2208), 12.9" iPad Pro (2048×2732)
 - Full 3D support preserved in exports
+- Cross-screen device overflow preserved in exports
 - Pixel-perfect output matching on-screen preview
+- Post-export GitHub star modal with a direct repository link
 
 ### Editor Experience
 - Multi-screenshot gallery with horizontal carousel
 - Real-time preview with instant updates
 - Drag-and-drop repositioning for all elements
-- Click-to-select with visual feedback
+- Click-to-select with visual feedback for text, devices, and overlay images
+- Device manager for adding, selecting, reordering, and removing devices
 - Dark mode UI
 
 ## Tech Stack
@@ -84,7 +90,10 @@ AppShots is a single-page application. All state is managed client-side with Rea
 - `EditorContext` — Global editor state: active project, screenshots, device selection, font settings
 - `CanvasPreview` — Main canvas rendering screenshots, device containers, overlays
 - `DeviceFrame` — Device mockup rendering in flat 2D and 3D with edges
+- `device-instances` — Device instance helpers and legacy normalization
+- `device-overflow` — Cross-screen device overflow calculations
 - `FontPicker` — Google Fonts search, preview, and selection
+- `GitHubStarModal` — Post-export GitHub star modal
 - `LeftSidebar` — Device picker, color picker, export controls
 - `RightSidebar` — Layout, appearance, content, and overlay controls
 - `RichTextEditor` — Rich text formatting toolbar
@@ -95,7 +104,8 @@ AppShots is a single-page application. All state is managed client-side with Rea
 
 ### Data Model
 - **Project**: Contains a name, device selection, export size, and a list of Screenshots
-- **Screenshot**: Headline, subheadline, screenshot image, background settings, text positions, font family, overlay images, device scale/offset/rotation/shadow, 3D settings
+- **Screenshot**: Headline, subheadline, background settings, text positions, font family, overlay images, and a list of DeviceInstances
+- **DeviceInstance**: Independent device image, model, color, position, scale, rotation, shadow, flat/3D style, and 3D angles
 - **ImageOverlay**: Positioned image with layer ordering, rotation, and shadow
 - **DeviceSpec**: Device dimensions, screen inset, corner radius, notch/island info, available colors
 
@@ -104,14 +114,16 @@ AppShots is a single-page application. All state is managed client-side with Rea
 1. Select a device from the left sidebar
 2. Choose a device frame color
 3. Upload an app screenshot to display inside the device
-4. Edit headline and subheadline text using the rich text editor
-5. Pick a font from Google Fonts
-6. Set background color or gradient
-7. Position the device with presets or manual controls
-8. Optionally switch to 3D mode and adjust rotation
-9. Add overlay images (badges, logos)
-10. Add more screenshots to the carousel for a complete set
-11. Export all screenshots at App Store resolution
+4. Add more devices for multi-device layouts
+5. Edit headline and subheadline text using the rich text editor
+6. Pick a font from Google Fonts
+7. Set background color or gradient
+8. Position the device with presets or manual controls
+9. Optionally switch to 3D mode and adjust rotation
+10. Drag devices across screenshot edges for continuous layouts
+11. Add overlay images (badges, logos)
+12. Add more screenshots to the carousel for a complete set
+13. Export all screenshots at App Store resolution
 
 ## API / Integration Points
 

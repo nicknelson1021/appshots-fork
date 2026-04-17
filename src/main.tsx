@@ -26,7 +26,9 @@ declare module "@tanstack/react-router" {
 
 // Render the app
 const rootElement = document.getElementById("app");
+const seoFallbackElement = document.getElementById("seo-fallback");
 if (rootElement && !rootElement.innerHTML) {
+  seoFallbackElement?.remove();
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>

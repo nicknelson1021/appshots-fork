@@ -22,8 +22,8 @@ export interface PersistedEditorState {
   lastSaved: number;
 }
 
-/** Current schema version for migration support */
-const CURRENT_VERSION = 2;
+/** Current schema version for migration support (persisted state & project files) */
+export const CURRENT_VERSION = 2;
 
 /** localStorage key for editor state */
 const STORAGE_KEY = "app-screenshot-editor-state";

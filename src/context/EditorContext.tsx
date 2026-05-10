@@ -32,6 +32,10 @@ import {
   useEditorPersistence,
   clearPersistedState,
 } from "../lib/useLocalStorage";
+import {
+  parseAppshotsProjectFile,
+  serializeAppshotsProjectFile,
+} from "../lib/project-file";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
@@ -46,6 +50,8 @@ interface EditorContextType {
   renameProject: (id: string, name: string) => void;
   deleteProject: (id: string) => void;
   switchProject: (id: string) => void;
+  exportActiveProjectToFile: () => void;
+  importProjectFromFile: (file: File) => Promise<void>;
 
   // State
   isFontPickerOpen: boolean;
@@ -88,6 +94,9 @@ interface EditorContextType {
   // Actions
   updateActiveScreenshot: (updates: Partial<Screenshot>) => void;
   addScreenshot: () => void;
+  duplicateScreenshot: () => void;
+  centerTextHorizontally: () => void;
+  centerDeviceHorizontally: () => void;
   removeScreenshot: (id: string) => void;
   handleElementMouseDown: (
     e: React.MouseEvent,
@@ -439,11 +448,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const switchProject = (id: string) => {
-    const project = projects.find((p) => p.id === id);
-    if (!project) return;
-
-    setActiveProjectId(id);
+  const loadProjectIntoEditor = (project: Project) => {
+    setActiveProjectId(project.id);
     setSelectedDeviceIdState(project.selectedDeviceId);
     setSelectedColorIdState(project.selectedColorId);
     setExportSizeIdState(project.exportSizeId);
@@ -452,6 +458,53 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setHeadlineFontSizeState(project.headlineFontSize);
     setSubheadlineFontSizeState(project.subheadlineFontSize);
     setSelectedElement(null);
+  };
+
+  const switchProject = (id: string) => {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+    loadProjectIntoEditor(project);
+  };
+
+  const exportActiveProjectToFile = () => {
+    const json = serializeAppshotsProjectFile(activeProject);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName =
+      activeProject.name
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
+        .trim()
+        .replace(/\s+/g, "-") || "project";
+    a.href = url;
+    a.download = `appshots-${safeName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importProjectFromFile = async (file: File) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      throw new Error("Could not parse JSON.");
+    }
+
+    const rawProject = parseAppshotsProjectFile(parsed);
+    const normalized = normalizeProject(rawProject);
+    const importedLabel = " (imported)";
+    const newProject: Project = {
+      ...normalized,
+      id: generateId(),
+      name: normalized.name.endsWith(importedLabel)
+        ? normalized.name
+        : `${normalized.name}${importedLabel}`,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    setProjects((prev) => [...prev, newProject]);
+    loadProjectIntoEditor(newProject);
   };
 
   const selectedDevice =
@@ -528,6 +581,54 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setScreenshots([...screenshots, newScreenshot]);
     setActiveScreenshotId(newScreenshot.id);
   };
+
+  const duplicateScreenshot = () => {
+    const source = screenshots.find((s) => s.id === activeScreenshotId);
+    if (!source || source.devices.length === 0) return;
+
+    const idMap = new Map<string, string>();
+    const newDevices = source.devices.map((device) => {
+      const newId = generateId();
+      idMap.set(device.id, newId);
+      return cloneDeviceInstance(device, { id: newId });
+    });
+
+    const mappedActive =
+      idMap.get(source.activeDeviceId) ?? newDevices[0].id;
+
+    const newScreenshot: Screenshot = {
+      ...source,
+      id: generateId(),
+      devices: newDevices,
+      activeDeviceId: mappedActive,
+      overlayImages: source.overlayImages.map((img) => ({
+        ...img,
+        id: generateId(),
+      })),
+    };
+
+    const sourceIndex = screenshots.findIndex((s) => s.id === source.id);
+    const insertIndex =
+      sourceIndex >= 0 ? sourceIndex + 1 : screenshots.length;
+    const next = [...screenshots];
+    next.splice(insertIndex, 0, newScreenshot);
+    setScreenshots(next);
+    setActiveScreenshotId(newScreenshot.id);
+    setSelectedElement(null);
+  };
+
+  const centerTextHorizontally = useCallback(() => {
+    updateActiveScreenshot({ headlineX: 50, subheadlineX: 50 });
+  }, [updateActiveScreenshot]);
+
+  const centerDeviceHorizontally = useCallback(() => {
+    const deviceId = activeScreenshot.activeDeviceId;
+    updateActiveScreenshot({
+      devices: activeScreenshot.devices.map((device) =>
+        device.id === deviceId ? { ...device, x: 50 } : device,
+      ),
+    });
+  }, [activeScreenshot, updateActiveScreenshot]);
 
   const handleElementMouseDown = (
     e: React.MouseEvent,
@@ -985,6 +1086,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         renameProject,
         deleteProject,
         switchProject,
+        exportActiveProjectToFile,
+        importProjectFromFile,
 
         isFontPickerOpen,
         setIsFontPickerOpen,
@@ -1020,6 +1123,9 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         exportSize,
         updateActiveScreenshot,
         addScreenshot,
+        duplicateScreenshot,
+        centerTextHorizontally,
+        centerDeviceHorizontally,
         removeScreenshot,
         handleElementMouseDown,
         handleElementMouseMove,

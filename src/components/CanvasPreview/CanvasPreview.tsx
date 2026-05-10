@@ -37,6 +37,9 @@ export const CanvasPreview = () => {
     handleElementMouseUp,
     getBackgroundStyle,
     addScreenshot,
+    duplicateScreenshot,
+    centerTextHorizontally,
+    centerDeviceHorizontally,
     previewRef,
     canvasContainerRef,
     selectedElement,
@@ -57,6 +60,9 @@ export const CanvasPreview = () => {
     <div className="flex-1 flex flex-col overflow-hidden">
       <Toolbar
         onAddScreenshot={addScreenshot}
+        onDuplicateScreenshot={duplicateScreenshot}
+        onCenterTextHorizontally={centerTextHorizontally}
+        onCenterDeviceHorizontally={centerDeviceHorizontally}
         screenshotCount={screenshots.length}
       />
 

@@ -56,6 +56,9 @@ interface EditorContextType {
   // State
   isFontPickerOpen: boolean;
   setIsFontPickerOpen: (open: boolean) => void;
+  /** Which text style the font picker edits when open */
+  fontPickerTarget: "headline" | "subheadline";
+  openFontPickerFor: (target: "headline" | "subheadline") => void;
   isStarModalOpen: boolean;
   setIsStarModalOpen: (open: boolean) => void;
   selectedDeviceId: string;
@@ -141,6 +144,8 @@ type LegacyScreenshotFields = {
   deviceStyle?: "flat" | "3d";
   device3dRotateY?: number;
   device3dRotateX?: number;
+  /** Pre-split fonts: migrated to headline/subheadline families */
+  fontFamily?: string;
 };
 
 // Default screenshot for new editors
@@ -168,7 +173,10 @@ const createDefaultScreenshot = (
     subheadlineX: 50,
     subheadlineY: 18,
     subheadlineWidth: 80,
-    fontFamily: "Inter",
+    headlineFontFamily: "Inter",
+    subheadlineFontFamily: "Inter",
+    headlineLetterSpacingEm: 0,
+    subheadlineLetterSpacingEm: 0,
     overlayImages: [],
     devices: [defaultDevice],
     activeDeviceId: defaultDevice.id,
@@ -189,6 +197,7 @@ const normalizeScreenshot = (
     deviceStyle: _legacyDeviceStyle,
     device3dRotateY: _legacyDevice3dRotateY,
     device3dRotateX: _legacyDevice3dRotateX,
+    fontFamily: legacyFontFamily,
     ...rest
   } = screenshot;
   const baseScreenshot = createDefaultScreenshot(fallbackDeviceId, fallbackColorId);
@@ -201,6 +210,14 @@ const normalizeScreenshot = (
   return {
     ...baseScreenshot,
     ...rest,
+    headlineFontFamily:
+      rest.headlineFontFamily ??
+      legacyFontFamily ??
+      baseScreenshot.headlineFontFamily,
+    subheadlineFontFamily:
+      rest.subheadlineFontFamily ??
+      legacyFontFamily ??
+      baseScreenshot.subheadlineFontFamily,
     overlayImages: screenshot.overlayImages ?? [],
     devices: deviceInstances,
     activeDeviceId,
@@ -279,6 +296,13 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize state from persisted values or defaults
   const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
+  const [fontPickerTarget, setFontPickerTarget] = useState<
+    "headline" | "subheadline"
+  >("headline");
+  const openFontPickerFor = (target: "headline" | "subheadline") => {
+    setFontPickerTarget(target);
+    setIsFontPickerOpen(true);
+  };
   const [isStarModalOpen, setIsStarModalOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceIdState] = useState(
     activeProject.selectedDeviceId,
@@ -570,7 +594,10 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       subheadlineX: 50,
       subheadlineY: 18,
       subheadlineWidth: 80,
-      fontFamily: activeScreenshot.fontFamily,
+      headlineFontFamily: activeScreenshot.headlineFontFamily,
+      subheadlineFontFamily: activeScreenshot.subheadlineFontFamily,
+      headlineLetterSpacingEm: activeScreenshot.headlineLetterSpacingEm,
+      subheadlineLetterSpacingEm: activeScreenshot.subheadlineLetterSpacingEm,
       overlayImages: [],
       devices: activeScreenshot.devices.map((device) =>
         cloneDeviceInstance(device, { id: generateId() }),
@@ -1091,6 +1118,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
 
         isFontPickerOpen,
         setIsFontPickerOpen,
+        fontPickerTarget,
+        openFontPickerFor,
         isStarModalOpen,
         setIsStarModalOpen,
         selectedDeviceId,

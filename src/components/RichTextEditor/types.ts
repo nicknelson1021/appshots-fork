@@ -40,6 +40,8 @@ export interface RichTextEditorProps {
   onChange: (html: string) => void;
   /** Placeholder text when empty */
   placeholder?: string;
+  /** Primary font family name for the editing surface (matches canvas preview) */
+  editorFontFamily?: string;
   /** Additional CSS classes */
   className?: string;
 }

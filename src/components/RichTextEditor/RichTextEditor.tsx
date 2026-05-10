@@ -42,6 +42,7 @@ export const RichTextEditor = ({
   value,
   onChange,
   placeholder = "Type something...",
+  editorFontFamily = "Inter",
   className = "",
 }: RichTextEditorProps) => {
   const {
@@ -70,6 +71,7 @@ export const RichTextEditor = ({
       <EditorContent
         editorRef={editorRef}
         placeholder={placeholder}
+        editorFontFamily={editorFontFamily}
         isEmpty={isEmpty}
         onInput={handleInput}
         onBlur={triggerChange}

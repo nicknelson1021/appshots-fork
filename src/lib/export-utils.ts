@@ -998,7 +998,8 @@ export const exportScreenshots = async ({
       await drawDeviceInstance(ctx, canvas, device, scaleX, localX);
     }
 
-    const fontFamily = `'${screenshot.fontFamily}', sans-serif`;
+    const headlineFontCss = `'${screenshot.headlineFontFamily}', sans-serif`;
+    const subheadlineFontCss = `'${screenshot.subheadlineFontFamily}', sans-serif`;
     const exportHeadlineFontSize = (headlineFontSize / 3) * scaleX;
     const exportSubheadlineFontSize = (subheadlineFontSize / 3) * scaleX;
     const lineHeight = 1.1;
@@ -1014,11 +1015,12 @@ export const exportScreenshots = async ({
       y: headlineTextY,
       maxWidth: headlineMaxWidth,
       fontSize: exportHeadlineFontSize,
-      fontFamily,
+      fontFamily: headlineFontCss,
       defaultColor: screenshot.textColor,
       lineHeight,
       textAlign: "center",
       fontWeight: 700,
+      letterSpacingEm: screenshot.headlineLetterSpacingEm,
     });
 
     const subheadlineX = canvas.width * (screenshot.subheadlineX / 100);
@@ -1029,11 +1031,12 @@ export const exportScreenshots = async ({
       y: subheadlineTextY,
       maxWidth: subheadlineMaxWidth,
       fontSize: exportSubheadlineFontSize,
-      fontFamily,
+      fontFamily: subheadlineFontCss,
       defaultColor: screenshot.textColor,
       lineHeight,
       textAlign: "center",
       fontWeight: 600,
+      letterSpacingEm: screenshot.subheadlineLetterSpacingEm,
     });
 
     // Draw overlay images in front of device

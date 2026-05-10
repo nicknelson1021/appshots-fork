@@ -17,14 +17,14 @@ interface AppearanceSectionProps {
   gradientPresets: GradientPreset[];
   /** Update screenshot handler */
   onUpdateScreenshot: (updates: Partial<Screenshot>) => void;
-  /** Open font picker handler */
-  onOpenFontPicker: () => void;
+  /** Open font picker for headline or subheadline */
+  onOpenFontPicker: (target: "headline" | "subheadline") => void;
 }
 
 /**
  * AppearanceSection - Visual appearance controls
  *
- * Background, text color, font, and screenshot image settings.
+ * Background, text color, headline/subheadline fonts, and screenshot image settings.
  *
  * @param props - Component props
  */
@@ -54,12 +54,39 @@ export const AppearanceSection = ({
         />
       </div>
 
-      {/* Font Style */}
+      {/* Fonts */}
       <div>
-        <label className="block text-xs text-gray-400 mb-1">Font Style</label>
-        <button onClick={onOpenFontPicker} className={STYLES.dropdownButton}>
-          <span style={{ fontFamily: `'${screenshot.fontFamily}', sans-serif` }}>
-            {screenshot.fontFamily}
+        <label className="block text-xs text-gray-400 mb-1">Headline font</label>
+        <button
+          type="button"
+          onClick={() => onOpenFontPicker("headline")}
+          className={STYLES.dropdownButton}
+        >
+          <span
+            style={{
+              fontFamily: `'${screenshot.headlineFontFamily}', sans-serif`,
+            }}
+          >
+            {screenshot.headlineFontFamily}
+          </span>
+          <ChevronDown size={16} className="text-gray-400" />
+        </button>
+      </div>
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">
+          Subheadline font
+        </label>
+        <button
+          type="button"
+          onClick={() => onOpenFontPicker("subheadline")}
+          className={STYLES.dropdownButton}
+        >
+          <span
+            style={{
+              fontFamily: `'${screenshot.subheadlineFontFamily}', sans-serif`,
+            }}
+          >
+            {screenshot.subheadlineFontFamily}
           </span>
           <ChevronDown size={16} className="text-gray-400" />
         </button>

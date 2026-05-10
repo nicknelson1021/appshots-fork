@@ -17,6 +17,7 @@ import { DeviceInstancesSection } from "./DeviceInstancesSection";
 import { ScreenshotImageSection } from "./ScreenshotImageSection";
 import { PositionPresets } from "./PositionPresets";
 import { LayoutSection } from "./LayoutSection";
+import { TextFormattingSection } from "./TextFormattingSection";
 import { ContentSection } from "./ContentSection";
 import { AppearanceSection } from "./AppearanceSection";
 import { OverlayImagesSection } from "./OverlayImagesSection";
@@ -39,7 +40,7 @@ export const RightSidebar = () => {
     setHeadlineFontSize,
     subheadlineFontSize,
     setSubheadlineFontSize,
-    setIsFontPickerOpen,
+    openFontPickerFor,
     fileInputRef,
     handleFileUpload,
     overlayImageInputRef,
@@ -91,9 +92,6 @@ export const RightSidebar = () => {
 
         <LayoutSection
           device={activeDevice}
-          screenshot={activeScreenshot}
-          headlineFontSize={headlineFontSize}
-          subheadlineFontSize={subheadlineFontSize}
           onUpdateDevice={(updates) =>
             updateActiveScreenshot({
               devices: activeScreenshot.devices.map((device) =>
@@ -101,6 +99,12 @@ export const RightSidebar = () => {
               ),
             })
           }
+        />
+
+        <TextFormattingSection
+          screenshot={activeScreenshot}
+          headlineFontSize={headlineFontSize}
+          subheadlineFontSize={subheadlineFontSize}
           onUpdateScreenshot={updateActiveScreenshot}
           onHeadlineSizeChange={setHeadlineFontSize}
           onSubheadlineSizeChange={setSubheadlineFontSize}
@@ -115,7 +119,7 @@ export const RightSidebar = () => {
           screenshot={activeScreenshot}
           gradientPresets={gradientPresets}
           onUpdateScreenshot={updateActiveScreenshot}
-          onOpenFontPicker={() => setIsFontPickerOpen(true)}
+          onOpenFontPicker={openFontPickerFor}
         />
 
         <OverlayImagesSection

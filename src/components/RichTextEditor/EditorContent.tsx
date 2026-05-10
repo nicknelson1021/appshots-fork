@@ -12,6 +12,8 @@ interface EditorContentProps {
   editorRef: RefObject<HTMLDivElement | null>;
   /** Placeholder text */
   placeholder: string;
+  /** Font family for typed text (matches preview) */
+  editorFontFamily: string;
   /** Whether the editor is empty */
   isEmpty: boolean;
   /** Input change handler */
@@ -40,6 +42,7 @@ interface EditorContentProps {
 export const EditorContent = ({
   editorRef,
   placeholder,
+  editorFontFamily,
   isEmpty,
   onInput,
   onBlur,
@@ -53,7 +56,9 @@ export const EditorContent = ({
       onBlur={onBlur}
       className={STYLES.editor}
       data-placeholder={placeholder}
-      style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+      style={{
+        fontFamily: `'${editorFontFamily}', system-ui, sans-serif`,
+      }}
     />
     {/* Fallback placeholder for browsers that don't support :empty */}
     {isEmpty && !editorRef.current?.innerHTML && (

@@ -86,7 +86,11 @@ export type Screenshot = {
   subheadlineX: number;
   subheadlineY: number;
   subheadlineWidth: number;
-  fontFamily: string;
+  headlineFontFamily: string;
+  subheadlineFontFamily: string;
+  /** Extra letter-spacing in em (e.g. 0.08 = slight tracking for caps) */
+  headlineLetterSpacingEm: number;
+  subheadlineLetterSpacingEm: number;
   overlayImages: ImageOverlay[];
   devices: DeviceInstance[];
   activeDeviceId: string;

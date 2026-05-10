@@ -12,6 +12,7 @@ export const EditorLayout = () => {
   const {
     isFontPickerOpen,
     setIsFontPickerOpen,
+    fontPickerTarget,
     isStarModalOpen,
     setIsStarModalOpen,
     activeScreenshot,
@@ -51,9 +52,17 @@ export const EditorLayout = () => {
         <FontPicker
           isOpen={isFontPickerOpen}
           onClose={() => setIsFontPickerOpen(false)}
-          selectedFontFamily={activeScreenshot.fontFamily}
+          selectedFontFamily={
+            fontPickerTarget === "headline"
+              ? activeScreenshot.headlineFontFamily
+              : activeScreenshot.subheadlineFontFamily
+          }
           onSelect={(fontFamily: string) =>
-            updateActiveScreenshot({ fontFamily })
+            updateActiveScreenshot(
+              fontPickerTarget === "headline"
+                ? { headlineFontFamily: fontFamily }
+                : { subheadlineFontFamily: fontFamily },
+            )
           }
         />
         <GitHubStarModal

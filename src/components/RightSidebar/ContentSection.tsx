@@ -34,6 +34,7 @@ export const ContentSection = ({
           value={screenshot.headline}
           onChange={(html) => onUpdateScreenshot({ headline: html })}
           placeholder="Enter headline..."
+          editorFontFamily={screenshot.headlineFontFamily}
         />
       </div>
 
@@ -43,6 +44,7 @@ export const ContentSection = ({
           value={screenshot.subheadline}
           onChange={(html) => onUpdateScreenshot({ subheadline: html })}
           placeholder="Enter subheadline..."
+          editorFontFamily={screenshot.subheadlineFontFamily}
         />
       </div>
     </div>

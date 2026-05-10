@@ -81,6 +81,11 @@ export const googleFonts: FontConfig[] = [
     weights: ["400", "500", "600", "700", "900"],
   },
   {
+    family: "Source Sans 3",
+    category: "sans-serif",
+    weights: ["300", "400", "600", "700", "900"],
+  },
+  {
     family: "Lora",
     category: "serif",
     weights: ["400", "500", "600", "700"],
@@ -104,6 +109,26 @@ export const googleFonts: FontConfig[] = [
     family: "Bebas Neue",
     category: "display",
     weights: ["400"],
+  },
+  {
+    family: "Anton",
+    category: "sans-serif",
+    weights: ["400"],
+  },
+  {
+    family: "Archivo Black",
+    category: "sans-serif",
+    weights: ["400"],
+  },
+  {
+    family: "Barlow Condensed",
+    category: "sans-serif",
+    weights: ["400", "500", "600", "700", "800", "900"],
+  },
+  {
+    family: "Space Grotesk",
+    category: "sans-serif",
+    weights: ["400", "500", "600", "700"],
   },
 ];
 

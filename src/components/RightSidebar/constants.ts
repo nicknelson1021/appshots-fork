@@ -111,6 +111,10 @@ export const SLIDER_RANGES = {
   deviceRotation: { min: 0, max: 360 },
   headlineSize: { min: 32, max: 120 },
   subheadlineSize: { min: 20, max: 72 },
+  /** Headline/subheadline vertical position: top of canvas → bottom */
+  textVertical: { min: 0, max: 100 },
+  /** Letter-spacing in em (CSS semantics); preview & export use the same values */
+  letterSpacingEm: { min: -0.05, max: 0.35, step: 0.01 },
   textWidth: { min: 20, max: 120, step: 5 },
   shadowBlur: { min: 0, max: 100 },
   shadowOffset: { min: -50, max: 50 },

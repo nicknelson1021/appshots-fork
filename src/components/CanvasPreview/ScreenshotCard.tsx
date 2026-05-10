@@ -144,7 +144,8 @@ export const ScreenshotCard = ({
           width={screenshot.headlineWidth}
           fontSize={headlineFontSize / 3}
           color={screenshot.textColor}
-          fontFamily={screenshot.fontFamily}
+          fontFamily={screenshot.headlineFontFamily}
+          letterSpacingEm={screenshot.headlineLetterSpacingEm}
           isSelected={
             isActive &&
             isElementSelected(selectedElement, "headline", screenshot.id)
@@ -162,7 +163,8 @@ export const ScreenshotCard = ({
           width={screenshot.subheadlineWidth}
           fontSize={subheadlineFontSize / 3}
           color={screenshot.textColor}
-          fontFamily={screenshot.fontFamily}
+          fontFamily={screenshot.subheadlineFontFamily}
+          letterSpacingEm={screenshot.subheadlineLetterSpacingEm}
           isSelected={
             isActive &&
             isElementSelected(selectedElement, "subheadline", screenshot.id)

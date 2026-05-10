@@ -26,6 +26,8 @@ interface TextElementProps {
   color: string;
   /** Font family name */
   fontFamily: string;
+  /** Extra letter-spacing in em (matches canvas export) */
+  letterSpacingEm?: number;
   /** Whether this element is selected */
   isSelected: boolean;
   /** Whether mouse interactions are enabled */
@@ -66,6 +68,7 @@ export const TextElement = ({
   fontSize,
   color,
   fontFamily,
+  letterSpacingEm = 0,
   isSelected,
   isInteractive,
   onMouseDown,
@@ -89,6 +92,7 @@ export const TextElement = ({
         lineHeight: 1.1,
         color,
         fontFamily: `'${fontFamily}', sans-serif`,
+        letterSpacing: `${letterSpacingEm}em`,
         wordWrap: "break-word",
         overflowWrap: "break-word",
         zIndex: Z_INDEX.text,

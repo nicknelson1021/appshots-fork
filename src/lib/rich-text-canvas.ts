@@ -29,6 +29,8 @@ export interface RenderOptions {
   lineHeight: number;
   textAlign: "left" | "center" | "right";
   fontWeight?: number;
+  /** Extra spacing between glyphs, in em (same as CSS letter-spacing magnitude × font size) */
+  letterSpacingEm?: number;
 }
 
 /**
@@ -187,7 +189,10 @@ export function renderRichText(
     lineHeight,
     textAlign,
     fontWeight = 400,
+    letterSpacingEm = 0,
   } = options;
+
+  const spacingPx = letterSpacingEm * fontSize;
 
   // Build font string for a segment
   const buildFont = (segment: StyledSegment): string => {
@@ -196,10 +201,50 @@ export function renderRichText(
     return `${style} ${weight} ${fontSize}px ${fontFamily}`;
   };
 
+  // Split segments into words while preserving styling
+  interface Word {
+    segments: StyledSegment[];
+    width: number;
+    isNewline: boolean;
+  }
+
+  const flattenWordChars = (
+    word: Word,
+  ): { segment: StyledSegment; ch: string }[] => {
+    const chars: { segment: StyledSegment; ch: string }[] = [];
+    for (const segment of word.segments) {
+      for (let i = 0; i < segment.text.length; i++) {
+        chars.push({ segment, ch: segment.text[i]! });
+      }
+    }
+    return chars;
+  };
+
+  const measureFlattenedWord = (word: Word): number => {
+    const chars = flattenWordChars(word);
+    if (chars.length === 0) return 0;
+    let total = 0;
+    for (let i = 0; i < chars.length; i++) {
+      ctx.font = buildFont(chars[i]!.segment);
+      total += ctx.measureText(chars[i]!.ch).width;
+      if (i < chars.length - 1) total += spacingPx;
+    }
+    return total;
+  };
+
   // Measure text width for a segment
   const measureSegment = (segment: StyledSegment): number => {
     ctx.font = buildFont(segment);
-    return ctx.measureText(segment.text).width;
+    const t = segment.text;
+    if (!spacingPx || t.length <= 1) {
+      return ctx.measureText(t).width;
+    }
+    let w = 0;
+    for (let i = 0; i < t.length; i++) {
+      w += ctx.measureText(t[i]!).width;
+      if (i < t.length - 1) w += spacingPx;
+    }
+    return w;
   };
 
   const drawRoundedHighlight = (
@@ -217,13 +262,6 @@ export function renderRichText(
     ctx.fillStyle = color;
     ctx.fill();
   };
-
-  // Split segments into words while preserving styling
-  interface Word {
-    segments: StyledSegment[];
-    width: number;
-    isNewline: boolean;
-  }
 
   const words: Word[] = [];
   let currentWord: StyledSegment[] = [];
@@ -270,6 +308,14 @@ export function renderRichText(
   // Don't forget the last word
   if (currentWord.length > 0) {
     words.push({ segments: currentWord, width: currentWordWidth, isNewline: false });
+  }
+
+  if (spacingPx) {
+    for (const w of words) {
+      if (!w.isNewline) {
+        w.width = measureFlattenedWord(w);
+      }
+    }
   }
 
   // Group words into lines
@@ -347,11 +393,27 @@ export function renderRichText(
     let currentX = lineX;
 
     for (const word of line.words) {
-      for (const segment of word.segments) {
-        ctx.font = buildFont(segment);
-        const width = ctx.measureText(segment.text).width;
-        positionedSegments.push({ segment, x: currentX, width });
-        currentX += width;
+      if (spacingPx) {
+        const chars = flattenWordChars(word);
+        for (let i = 0; i < chars.length; i++) {
+          const { segment, ch } = chars[i]!;
+          ctx.font = buildFont(segment);
+          const charSegment: StyledSegment = { ...segment, text: ch };
+          const width = ctx.measureText(ch).width;
+          positionedSegments.push({
+            segment: charSegment,
+            x: currentX,
+            width,
+          });
+          currentX += width + (i < chars.length - 1 ? spacingPx : 0);
+        }
+      } else {
+        for (const segment of word.segments) {
+          ctx.font = buildFont(segment);
+          const width = ctx.measureText(segment.text).width;
+          positionedSegments.push({ segment, x: currentX, width });
+          currentX += width;
+        }
       }
     }
 

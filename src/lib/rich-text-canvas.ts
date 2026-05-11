@@ -34,6 +34,56 @@ export interface RenderOptions {
 }
 
 /**
+ * Paragraph-level alignment inside exported rich text HTML (often `style="text-align:left"`
+ * from contentEditable). Matches how the preview looks when inline CSS overrides the
+ * TextElement wrapper. Default when absent is **left** — same as browsers.
+ */
+export function inferParagraphTextAlign(html: string): "left" | "center" | "right" {
+  const trimmed = html.trim();
+  if (!trimmed) return "left";
+
+  const parser = new DOMParser();
+  const wrapper = parser.parseFromString(`<div>${trimmed}</div>`, "text/html")
+    .body.firstElementChild;
+  if (!wrapper) return "left";
+
+  const normalize = (
+    raw: string,
+  ): "left" | "center" | "right" | null => {
+    const v = raw.trim().toLowerCase().replace(/;$/, "").split(/\s+/)[0]!;
+    if (!v || v === "justify" || v === "start" || v === "left") return "left";
+    if (v === "middle" || v === "center") return "center";
+    if (v === "right" || v === "end") return "right";
+    return null;
+  };
+
+  const queue: Element[] = [wrapper];
+  for (let i = 0; i < queue.length; i++) {
+    const el = queue[i]!;
+    for (const c of Array.from(el.children)) {
+      queue.push(c);
+    }
+
+    const styleAttr = el.getAttribute("style");
+    if (styleAttr) {
+      const m = styleAttr.match(/text-align\s*:\s*([^;]+)/i);
+      if (m?.[1]) {
+        const n = normalize(m[1]);
+        if (n) return n;
+      }
+    }
+
+    const alignAttr = el.getAttribute("align");
+    if (alignAttr) {
+      const n = normalize(alignAttr);
+      if (n) return n;
+    }
+  }
+
+  return "left";
+}
+
+/**
  * Parse HTML string into styled segments
  */
 export function parseRichText(html: string, defaultColor: string): StyledSegment[] {
@@ -371,14 +421,20 @@ export function renderRichText(
     }
 
     switch (textAlign) {
+      case "left":
+        // x = left edge of the text column (canvas px)
+        lineX = x;
+        break;
       case "center":
+        // x = horizontal center of the text block
         lineX = x - trimmedWidth / 2;
         break;
       case "right":
+        // x = right edge of the text column
         lineX = x - trimmedWidth;
         break;
       default:
-        lineX = x - maxWidth / 2; // left align from center point
+        lineX = x - trimmedWidth / 2;
     }
 
     // Resolve line segments before drawing so highlight backgrounds can span

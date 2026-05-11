@@ -7,6 +7,7 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import type { Project } from "../types";
+import { migrateProjectsHorizontalV2ToV3 } from "./horizontal-position-migration";
 
 /**
  * Editor state that gets persisted to localStorage
@@ -23,7 +24,7 @@ export interface PersistedEditorState {
 }
 
 /** Current schema version for migration support (persisted state & project files) */
-export const CURRENT_VERSION = 2;
+export const CURRENT_VERSION = 3;
 
 /** localStorage key for editor state */
 const STORAGE_KEY = "app-screenshot-editor-state";
@@ -43,20 +44,27 @@ export const loadPersistedState = (): PersistedEditorState | null => {
 
     const parsed = JSON.parse(stored) as PersistedEditorState;
 
-    // Version check - if old version, return null to reset
-    if (parsed.version !== CURRENT_VERSION) {
-      console.warn(
-        `Editor state version mismatch: ${parsed.version} !== ${CURRENT_VERSION}. Resetting state.`,
-      );
-      return null;
-    }
-
     // Basic validation
     if (!parsed.projects || !Array.isArray(parsed.projects)) {
       return null;
     }
 
-    return parsed;
+    if (parsed.version === CURRENT_VERSION) {
+      return parsed;
+    }
+
+    if (parsed.version === 2) {
+      return {
+        ...parsed,
+        version: CURRENT_VERSION,
+        projects: migrateProjectsHorizontalV2ToV3(parsed.projects),
+      };
+    }
+
+    console.warn(
+      `Editor state version mismatch: ${parsed.version} !== ${CURRENT_VERSION}. Resetting state.`,
+    );
+    return null;
   } catch (error) {
     console.error("Failed to load editor state from localStorage:", error);
     return null;

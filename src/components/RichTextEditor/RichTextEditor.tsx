@@ -27,7 +27,7 @@ import { EditorContent } from "./EditorContent";
  * @param props.value - Controlled HTML value
  * @param props.onChange - Callback when content changes
  * @param props.placeholder - Placeholder text when empty
- * @param props.className - Additional CSS classes
+ * @param props.className - Additional CSS classes on the editor container
  *
  * @example
  * const [content, setContent] = useState("");

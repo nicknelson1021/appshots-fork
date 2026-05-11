@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { BackgroundImageFit, TextBlockAlign } from "../types";
 import { createDeviceInstance } from "./device-instances";
 import {
   getDeviceLocalXForScreenshot,
@@ -40,6 +41,8 @@ describe("getRenderableDevicesForScreenshot", () => {
       backgroundColor: "#000000",
       backgroundMode: "solid" as const,
       gradientPresetId: null,
+      backgroundImageSrc: null,
+      backgroundImageFit: "cover" as BackgroundImageFit,
       textColor: "#ffffff",
       headlineX: 50,
       headlineY: 10,
@@ -51,6 +54,8 @@ describe("getRenderableDevicesForScreenshot", () => {
       subheadlineFontFamily: "Inter",
       headlineLetterSpacingEm: 0,
       subheadlineLetterSpacingEm: 0,
+      headlineTextAlign: "center" as TextBlockAlign,
+      subheadlineTextAlign: "center" as TextBlockAlign,
       overlayImages: [],
       activeDeviceId: screenshot.devices[0].id,
       ...screenshot,

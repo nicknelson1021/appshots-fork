@@ -1,7 +1,11 @@
 /** @vitest-environment jsdom */
 
 import { describe, expect, it } from "vitest";
-import { parseRichText, renderRichText } from "./rich-text-canvas";
+import {
+  inferParagraphTextAlign,
+  parseRichText,
+  renderRichText,
+} from "./rich-text-canvas";
 import {
   RICH_TEXT_HIGHLIGHT_HEIGHT_EM,
   RICH_TEXT_HIGHLIGHT_RADIUS_EM,
@@ -32,6 +36,32 @@ describe("parseRichText", () => {
     const [segment] = parseRichText("<mark>Highlighted</mark>", "#ffffff");
 
     expect(segment.backgroundColor).toBe("yellow");
+  });
+});
+
+describe("inferParagraphTextAlign", () => {
+  it("defaults to left without inline alignment", () => {
+    expect(inferParagraphTextAlign("<div>Hey</div>")).toBe("left");
+  });
+
+  it("reads nested text-align from style", () => {
+    expect(
+      inferParagraphTextAlign(
+        '<div><div style="text-align:center">Hi</div></div>',
+      ),
+    ).toBe("center");
+    expect(inferParagraphTextAlign('<div style="text-align: right;">x</div>')).toBe(
+      "right",
+    );
+    expect(
+      inferParagraphTextAlign('<p style="text-align:left;color:red">ok</p>'),
+    ).toBe("left");
+  });
+
+  it("reads align attribute", () => {
+    expect(inferParagraphTextAlign('<div align="CENTER">Hi</div>')).toBe(
+      "center",
+    );
   });
 });
 

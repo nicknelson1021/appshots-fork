@@ -8,6 +8,7 @@ import type React from "react";
 import { getTextSelectionStyles } from "./utils";
 import { Z_INDEX } from "./constants";
 import { normalizeRichTextHighlights } from "../../lib/rich-text-highlight";
+import type { TextBlockAlign } from "../../types";
 
 interface TextElementProps {
   /** Type of text element */
@@ -28,6 +29,8 @@ interface TextElementProps {
   fontFamily: string;
   /** Extra letter-spacing in em (matches canvas export) */
   letterSpacingEm?: number;
+  /** Block alignment (sets how horizontal % maps and text justification) */
+  textAlign: TextBlockAlign;
   /** Whether this element is selected */
   isSelected: boolean;
   /** Whether mouse interactions are enabled */
@@ -69,6 +72,7 @@ export const TextElement = ({
   color,
   fontFamily,
   letterSpacingEm = 0,
+  textAlign,
   isSelected,
   isInteractive,
   onMouseDown,
@@ -76,16 +80,34 @@ export const TextElement = ({
   const isHeadline = type === "headline";
   const normalizedContent = normalizeRichTextHighlights(content);
 
+  const alignClass =
+    textAlign === "left"
+      ? "text-left"
+      : textAlign === "right"
+        ? "text-right"
+        : "text-center";
+
+  /**
+   * Horizontal % is always distance from the canvas **left** edge to the block anchor:
+   * left edge (left), center (center), or right edge (right).
+   */
+  const xTransform =
+    textAlign === "center"
+      ? "translateX(-50%)"
+      : textAlign === "left"
+        ? "translateX(0)"
+        : "translateX(-100%)";
+
   return (
     <div
       data-draggable-element={type}
-      className={`absolute cursor-move text-center select-none whitespace-pre-wrap overflow-hidden ${
+      className={`absolute cursor-move select-none whitespace-pre-wrap overflow-hidden ${alignClass} ${
         isHeadline ? "font-bold" : "font-semibold"
       }`}
       style={{
         left: `${x}%`,
         top: `${y}%`,
-        transform: "translateX(-50%)",
+        transform: xTransform,
         width: `${width}%`,
         maxWidth: `${width}%`,
         fontSize: `${fontSize}px`,

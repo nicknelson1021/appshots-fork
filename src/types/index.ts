@@ -43,6 +43,8 @@ export type GradientPreset = {
   to: string;
 };
 
+export type BackgroundImageFit = "cover" | "contain" | "fill";
+
 export type ImageOverlay = {
   id: string;
   src: string;
@@ -56,6 +58,9 @@ export type ImageOverlay = {
 };
 
 export type DeviceStyle = "flat" | "3d";
+
+/** Block alignment for headline/subheadline (determines how X% maps on the canvas) */
+export type TextBlockAlign = "left" | "center" | "right";
 
 export type DeviceInstance = {
   id: string;
@@ -79,6 +84,9 @@ export type Screenshot = {
   backgroundColor: string;
   backgroundMode: "solid" | "gradient" | "image";
   gradientPresetId: string | null;
+  /** Data URL when backgroundMode is image */
+  backgroundImageSrc: string | null;
+  backgroundImageFit: BackgroundImageFit;
   textColor: string;
   headlineX: number;
   headlineY: number;
@@ -91,6 +99,8 @@ export type Screenshot = {
   /** Extra letter-spacing in em (e.g. 0.08 = slight tracking for caps) */
   headlineLetterSpacingEm: number;
   subheadlineLetterSpacingEm: number;
+  headlineTextAlign: TextBlockAlign;
+  subheadlineTextAlign: TextBlockAlign;
   overlayImages: ImageOverlay[];
   devices: DeviceInstance[];
   activeDeviceId: string;

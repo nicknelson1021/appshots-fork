@@ -42,6 +42,6 @@ export interface RichTextEditorProps {
   placeholder?: string;
   /** Primary font family name for the editing surface (matches canvas preview) */
   editorFontFamily?: string;
-  /** Additional CSS classes */
+  /** Additional CSS classes on the editor container */
   className?: string;
 }

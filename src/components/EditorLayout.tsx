@@ -6,7 +6,7 @@ import { GitHubStarModal } from "./GitHubStarModal";
 import { useEditor } from "../context/EditorContext";
 import { GITHUB_REPO_URL } from "../constants";
 import { Star, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const EditorLayout = () => {
   const {
@@ -17,9 +17,30 @@ export const EditorLayout = () => {
     setIsStarModalOpen,
     activeScreenshot,
     updateActiveScreenshot,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useEditor();
 
   const [showBanner, setShowBanner] = useState(true);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.key.toLowerCase() !== "z") return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('[contenteditable="true"]')) return;
+      e.preventDefault();
+      if (e.shiftKey) {
+        if (canRedo) redo();
+      } else if (canUndo) {
+        undo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0a] text-white overflow-hidden">

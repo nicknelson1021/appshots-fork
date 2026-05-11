@@ -47,6 +47,10 @@ export const CanvasPreview = () => {
     subheadlineFontSize,
     setPreviewDimensions,
     exportSize,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useEditor();
 
   // Track preview dimensions for export scaling
@@ -64,6 +68,10 @@ export const CanvasPreview = () => {
         onCenterTextHorizontally={centerTextHorizontally}
         onCenterDeviceHorizontally={centerDeviceHorizontally}
         screenshotCount={screenshots.length}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       {/* Preview area with horizontal scroll */}

@@ -4,6 +4,7 @@
  */
 
 import type { Project } from "../types";
+import { migrateScreenshotHorizontalV2ToV3 } from "./horizontal-position-migration";
 import { CURRENT_VERSION } from "./useLocalStorage";
 
 export const PROJECT_FILE_KIND = "appshots-project" as const;
@@ -35,9 +36,10 @@ export function parseAppshotsProjectFile(json: unknown): Project {
 
   const root = json as Record<string, unknown>;
 
-  if (root.version !== CURRENT_VERSION) {
+  const fileVersion = root.version;
+  if (fileVersion !== CURRENT_VERSION && fileVersion !== 2) {
     throw new Error(
-      `This file was saved with a different format (version ${String(root.version)}). Expected version ${CURRENT_VERSION}.`,
+      `This file was saved with a different format (version ${String(fileVersion)}). Expected version ${CURRENT_VERSION} or 2.`,
     );
   }
 
@@ -55,5 +57,12 @@ export function parseAppshotsProjectFile(json: unknown): Project {
     throw new Error("Invalid file: project is missing a name or screenshots.");
   }
 
-  return project as Project;
+  let result = project as Project;
+  if (fileVersion === 2) {
+    result = {
+      ...result,
+      screenshots: result.screenshots.map(migrateScreenshotHorizontalV2ToV3),
+    };
+  }
+  return result;
 }

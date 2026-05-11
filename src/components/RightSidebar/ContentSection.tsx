@@ -25,28 +25,45 @@ interface ContentSectionProps {
 export const ContentSection = ({
   screenshot,
   onUpdateScreenshot,
-}: ContentSectionProps) => (
-  <SidebarSection title="Content">
-    <div className="space-y-4">
-      <div>
-        <label className="block text-xs text-gray-400 mb-1">Headline</label>
-        <RichTextEditor
-          value={screenshot.headline}
-          onChange={(html) => onUpdateScreenshot({ headline: html })}
-          placeholder="Enter headline..."
-          editorFontFamily={screenshot.headlineFontFamily}
-        />
-      </div>
+}: ContentSectionProps) => {
+  const headlineAlignClass =
+    screenshot.headlineTextAlign === "left"
+      ? "text-left"
+      : screenshot.headlineTextAlign === "right"
+        ? "text-right"
+        : "text-center";
+  const subAlignClass =
+    screenshot.subheadlineTextAlign === "left"
+      ? "text-left"
+      : screenshot.subheadlineTextAlign === "right"
+        ? "text-right"
+        : "text-center";
 
-      <div>
-        <label className="block text-xs text-gray-400 mb-1">Subheadline</label>
-        <RichTextEditor
-          value={screenshot.subheadline}
-          onChange={(html) => onUpdateScreenshot({ subheadline: html })}
-          placeholder="Enter subheadline..."
-          editorFontFamily={screenshot.subheadlineFontFamily}
-        />
+  return (
+    <SidebarSection title="Content">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs text-gray-400 mb-1">Headline</label>
+          <RichTextEditor
+            value={screenshot.headline}
+            onChange={(html) => onUpdateScreenshot({ headline: html })}
+            placeholder="Enter headline..."
+            editorFontFamily={screenshot.headlineFontFamily}
+            className={headlineAlignClass}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-400 mb-1">Subheadline</label>
+          <RichTextEditor
+            value={screenshot.subheadline}
+            onChange={(html) => onUpdateScreenshot({ subheadline: html })}
+            placeholder="Enter subheadline..."
+            editorFontFamily={screenshot.subheadlineFontFamily}
+            className={subAlignClass}
+          />
+        </div>
       </div>
-    </div>
-  </SidebarSection>
-);
+    </SidebarSection>
+  );
+};

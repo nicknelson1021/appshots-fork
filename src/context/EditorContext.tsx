@@ -5,6 +5,7 @@ import React, {
   useRef,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import type {
@@ -131,9 +132,18 @@ interface EditorContextType {
   handleExport: () => void;
   getBackgroundStyle: (screenshot: Screenshot) => string;
   resetEditor: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
+
+type HistorySnapshot = {
+  projects: Project[];
+  activeProjectId: string;
+};
 
 type LegacyScreenshotFields = {
   screenshotSrc?: string | null;
@@ -166,6 +176,8 @@ const createDefaultScreenshot = (
     backgroundColor: "#8b5cf6",
     backgroundMode: "solid",
     gradientPresetId: null,
+    backgroundImageSrc: null,
+    backgroundImageFit: "cover",
     textColor: "#ffffff",
     headlineX: 50,
     headlineY: 10,
@@ -177,6 +189,8 @@ const createDefaultScreenshot = (
     subheadlineFontFamily: "Inter",
     headlineLetterSpacingEm: 0,
     subheadlineLetterSpacingEm: 0,
+    headlineTextAlign: "center",
+    subheadlineTextAlign: "center",
     overlayImages: [],
     devices: [defaultDevice],
     activeDeviceId: defaultDevice.id,
@@ -490,6 +504,85 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     loadProjectIntoEditor(project);
   };
 
+  const historyRef = useRef<{ stack: HistorySnapshot[]; index: number }>({
+    stack: [],
+    index: -1,
+  });
+  /**
+   * After undo/redo, `updateProjectState` bumps `updatedAt` and retriggers the
+   * history effect. A short cooldown prevents the debounced recorder from
+   * appending a checkpoint and wiping the redo branch.
+   */
+  const historyCooldownUntilRef = useRef(0);
+  const [historyRevision, setHistoryRevision] = useState(0);
+
+  const applyHistorySnapshot = useCallback((snap: HistorySnapshot) => {
+    const projectsClone = structuredClone(snap.projects);
+    const project =
+      projectsClone.find((p) => p.id === snap.activeProjectId) ??
+      projectsClone[0];
+    if (!project) return;
+    setProjects(projectsClone);
+    setActiveProjectId(project.id);
+    setSelectedDeviceIdState(project.selectedDeviceId);
+    setSelectedColorIdState(project.selectedColorId);
+    setExportSizeIdState(project.exportSizeId);
+    setScreenshotsState(project.screenshots);
+    setActiveScreenshotIdState(project.activeScreenshotId);
+    setHeadlineFontSizeState(project.headlineFontSize);
+    setSubheadlineFontSizeState(project.subheadlineFontSize);
+    setSelectedElement(null);
+  }, []);
+
+  const undo = useCallback(() => {
+    const h = historyRef.current;
+    if (h.index <= 0) return;
+    historyCooldownUntilRef.current = Date.now() + 800;
+    const nextIndex = h.index - 1;
+    applyHistorySnapshot(h.stack[nextIndex]);
+    historyRef.current = { ...h, index: nextIndex };
+    setHistoryRevision((n) => n + 1);
+  }, [applyHistorySnapshot]);
+
+  const redo = useCallback(() => {
+    const h = historyRef.current;
+    if (h.index >= h.stack.length - 1) return;
+    historyCooldownUntilRef.current = Date.now() + 800;
+    const nextIndex = h.index + 1;
+    applyHistorySnapshot(h.stack[nextIndex]);
+    historyRef.current = { ...h, index: nextIndex };
+    setHistoryRevision((n) => n + 1);
+  }, [applyHistorySnapshot]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (Date.now() < historyCooldownUntilRef.current) return;
+      const snap: HistorySnapshot = {
+        projects: structuredClone(projects),
+        activeProjectId,
+      };
+      const json = JSON.stringify(snap);
+      const h = historyRef.current;
+      const trimmed = h.stack.slice(0, h.index + 1);
+      const last = trimmed[trimmed.length - 1];
+      const lastJson = last ? JSON.stringify(last) : "";
+      if (json === lastJson) return;
+      const stack = [...trimmed, snap].slice(-40);
+      const index = stack.length - 1;
+      historyRef.current = { stack, index };
+      setHistoryRevision((n) => n + 1);
+    }, 450);
+    return () => clearTimeout(t);
+  }, [projects, activeProjectId]);
+
+  const { canUndo, canRedo } = useMemo(() => {
+    const h = historyRef.current;
+    return {
+      canUndo: h.index > 0,
+      canRedo: h.stack.length > 0 && h.index < h.stack.length - 1,
+    };
+  }, [historyRevision]);
+
   const exportActiveProjectToFile = () => {
     const json = serializeAppshotsProjectFile(activeProject);
     const blob = new Blob([json], { type: "application/json" });
@@ -529,6 +622,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
 
     setProjects((prev) => [...prev, newProject]);
     loadProjectIntoEditor(newProject);
+    historyRef.current = { stack: [], index: -1 };
+    setHistoryRevision((n) => n + 1);
   };
 
   const selectedDevice =
@@ -587,6 +682,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       backgroundColor: activeScreenshot.backgroundColor,
       backgroundMode: activeScreenshot.backgroundMode,
       gradientPresetId: activeScreenshot.gradientPresetId,
+      backgroundImageSrc: activeScreenshot.backgroundImageSrc,
+      backgroundImageFit: activeScreenshot.backgroundImageFit,
       textColor: activeScreenshot.textColor,
       headlineX: 50,
       headlineY: 10,
@@ -598,6 +695,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       subheadlineFontFamily: activeScreenshot.subheadlineFontFamily,
       headlineLetterSpacingEm: activeScreenshot.headlineLetterSpacingEm,
       subheadlineLetterSpacingEm: activeScreenshot.subheadlineLetterSpacingEm,
+      headlineTextAlign: activeScreenshot.headlineTextAlign,
+      subheadlineTextAlign: activeScreenshot.subheadlineTextAlign,
       overlayImages: [],
       devices: activeScreenshot.devices.map((device) =>
         cloneDeviceInstance(device, { id: generateId() }),
@@ -770,7 +869,10 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       const newX = dragStartElementPos.current.x + deltaX;
       const newY = dragStartElementPos.current.y + deltaY;
 
-      pendingUpdate.current = { x: newX, y: newY };
+      pendingUpdate.current = {
+        x: Math.min(100, Math.max(0, newX)),
+        y: Math.min(100, Math.max(0, newY)),
+      };
 
       if (rafId.current === null) {
         rafId.current = requestAnimationFrame(applyDragUpdate);
@@ -1069,6 +1171,14 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         gradientPresets[0];
       return `linear-gradient(180deg, ${preset.from}, ${preset.to})`;
     }
+    if (
+      screenshot.backgroundMode === "image" &&
+      screenshot.backgroundImageSrc
+    ) {
+      const fit =
+        screenshot.backgroundImageFit === "fill" ? "100% 100%" : screenshot.backgroundImageFit;
+      return `${screenshot.backgroundColor} url(${JSON.stringify(screenshot.backgroundImageSrc)}) center / ${fit} no-repeat`;
+    }
     return screenshot.backgroundColor;
   };
 
@@ -1100,6 +1210,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setSubheadlineFontSizeState(defaultProject.subheadlineFontSize);
     setSelectedElement(null);
     setIsStarModalOpen(false);
+    historyRef.current = { stack: [], index: -1 };
+    setHistoryRevision((n) => n + 1);
   };
 
   return (
@@ -1178,6 +1290,10 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         handleExport,
         getBackgroundStyle,
         resetEditor,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
       }}
     >
       {children}

@@ -8,7 +8,9 @@ import {
   AlignHorizontalJustifyCenter,
   CopyPlus,
   Plus,
+  Redo2,
   Smartphone,
+  Undo2,
 } from "lucide-react";
 
 interface ToolbarProps {
@@ -22,6 +24,10 @@ interface ToolbarProps {
   onCenterDeviceHorizontally: () => void;
   /** Total number of screenshots */
   screenshotCount: number;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 /**
@@ -45,9 +51,33 @@ export const Toolbar = ({
   onCenterTextHorizontally,
   onCenterDeviceHorizontally,
   screenshotCount,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: ToolbarProps) => (
   <div className="h-14 border-b border-white/10 bg-[#141414] flex items-center px-4 gap-4">
     <div className="flex items-center gap-2 flex-wrap">
+      <button
+        type="button"
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo (⌘Z / Ctrl+Z)"
+        className="flex items-center gap-1.5 border border-white/20 hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
+      >
+        <Undo2 className="w-4 h-4" />
+        Undo
+      </button>
+      <button
+        type="button"
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo (⌘⇧Z / Ctrl+Shift+Z)"
+        className="flex items-center gap-1.5 border border-white/20 hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
+      >
+        <Redo2 className="w-4 h-4" />
+        Redo
+      </button>
       <button
         type="button"
         onClick={onAddScreenshot}

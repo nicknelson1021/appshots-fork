@@ -4,9 +4,11 @@ import type {
   DeviceColor,
   ExportSize,
   DeviceInstance,
+  BackgroundImageFit,
+  TextBlockAlign,
 } from "../types";
 import { gradientPresets } from "../constants";
-import { drawRichText } from "./rich-text-canvas";
+import { drawRichText, inferParagraphTextAlign } from "./rich-text-canvas";
 import { getDeviceColorById, getDeviceSpecById } from "./device-instances";
 import { getRenderableDevicesForScreenshot } from "./device-overflow";
 import JSZip from "jszip";
@@ -17,6 +19,90 @@ interface ExportOptions {
   previewDimensions: { width: number; height: number };
   headlineFontSize: number;
   subheadlineFontSize: number;
+}
+
+/** Matches {@link TextElement} padding — border box is positioned by %; text sits inside 4px padding. */
+const PREVIEW_TEXT_PADDING_PX = 4;
+
+/**
+ * Draw screenshot background image like CSS `background: url(...) center / cover|contain|fill`.
+ * Letterboxing uses {@link Screenshot.backgroundColor} (caller should fill that first for contain).
+ */
+function drawBackgroundImageToCanvas(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  src: string,
+  fit: BackgroundImageFit,
+): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      if (!iw || !ih) {
+        resolve();
+        return;
+      }
+
+      if (fit === "fill") {
+        ctx.drawImage(img, 0, 0, cw, ch);
+        resolve();
+        return;
+      }
+
+      const scale =
+        fit === "cover"
+          ? Math.max(cw / iw, ch / ih)
+          : Math.min(cw / iw, ch / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      const dx = (cw - dw) / 2;
+      const dy = (ch - dh) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
+/** Left edge X of full-width headline/subheadline box from anchor % position. */
+function textBlockLeftPx(
+  anchorXPx: number,
+  blockAlign: TextBlockAlign,
+  blockWidthPx: number,
+): number {
+  switch (blockAlign) {
+    case "left":
+      return anchorXPx;
+    case "right":
+      return anchorXPx - blockWidthPx;
+    default:
+      return anchorXPx - blockWidthPx / 2;
+  }
+}
+
+/**
+ * Horizontal anchor for {@link drawRichText} from block geometry + inferred paragraph alignment
+ * (inline text-align inside HTML matches preview when it overrides wrapper text-center).
+ */
+function richTextParagraphAnchorX(
+  blockLeftPx: number,
+  blockWidthPx: number,
+  padX: number,
+  paragraphAlign: TextBlockAlign,
+): number {
+  switch (paragraphAlign) {
+    case "left":
+      return blockLeftPx + padX;
+    case "right":
+      return blockLeftPx + blockWidthPx - padX;
+    default:
+      return blockLeftPx + blockWidthPx / 2;
+  }
 }
 
 /**
@@ -915,13 +1001,17 @@ export const exportScreenshots = async ({
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
 
-    // Scale factor for export - use actual preview dimensions for accurate scaling
-    // This ensures export matches preview exactly
-    const scaleX = canvas.width / previewDimensions.width;
-    // Account for padding (4px * 2) in preview to match text wrapping
-    const paddingX = 8 * scaleX;
+    const prevW = Math.max(previewDimensions.width, 1);
+    const prevH = Math.max(previewDimensions.height, 1);
+    // Preview card uses the same aspect ratio as export size; scale maps preview px → export px
+    const scaleX = canvas.width / prevW;
+    const scaleY = canvas.height / prevH;
+    // Same horizontal inset as TextElement padding for maxWidth (left + right)
+    const paddingX = PREVIEW_TEXT_PADDING_PX * 2 * scaleX;
+    const padX = PREVIEW_TEXT_PADDING_PX * scaleX;
+    const padY = PREVIEW_TEXT_PADDING_PX * scaleY;
 
-    // Draw background
+    // Draw background (preview CSS uses gradient, solid, or image)
     if (screenshot.backgroundMode === "gradient") {
       const preset =
         gradientPresets.find((p) => p.id === screenshot.gradientPresetId) ??
@@ -930,10 +1020,23 @@ export const exportScreenshots = async ({
       gradient.addColorStop(0, preset.from);
       gradient.addColorStop(1, preset.to);
       ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (
+      screenshot.backgroundMode === "image" &&
+      screenshot.backgroundImageSrc
+    ) {
+      ctx.fillStyle = screenshot.backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await drawBackgroundImageToCanvas(
+        ctx,
+        canvas,
+        screenshot.backgroundImageSrc,
+        screenshot.backgroundImageFit ?? "cover",
+      );
     } else {
       ctx.fillStyle = screenshot.backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Helper to draw overlay images
     const drawOverlayImages = async (layer: "behind" | "front") => {
@@ -1003,38 +1106,57 @@ export const exportScreenshots = async ({
     const exportHeadlineFontSize = (headlineFontSize / 3) * scaleX;
     const exportSubheadlineFontSize = (subheadlineFontSize / 3) * scaleX;
     const lineHeight = 1.1;
-    const headlineMaxWidth =
-      canvas.width * (screenshot.headlineWidth / 100) - paddingX;
-    const subheadlineMaxWidth =
-      canvas.width * (screenshot.subheadlineWidth / 100) - paddingX;
-    const headlineX = canvas.width * (screenshot.headlineX / 100);
-    const headlineTextY = canvas.height * (screenshot.headlineY / 100);
+    const headlineBlockW = canvas.width * (screenshot.headlineWidth / 100);
+    const subBlockW = canvas.width * (screenshot.subheadlineWidth / 100);
+    const headlineMaxWidth = headlineBlockW - paddingX;
+    const subheadlineMaxWidth = subBlockW - paddingX;
+    const headlineLeft = textBlockLeftPx(
+      canvas.width * (screenshot.headlineX / 100),
+      screenshot.headlineTextAlign,
+      headlineBlockW,
+    );
+    const subLeft = textBlockLeftPx(
+      canvas.width * (screenshot.subheadlineX / 100),
+      screenshot.subheadlineTextAlign,
+      subBlockW,
+    );
+
+    const headlineParAlign = inferParagraphTextAlign(screenshot.headline);
+    const subParAlign = inferParagraphTextAlign(screenshot.subheadline);
+
+    const headlineTextY =
+      canvas.height * (screenshot.headlineY / 100) + padY;
 
     drawRichText(ctx, screenshot.headline, {
-      x: headlineX,
+      x: richTextParagraphAnchorX(
+        headlineLeft,
+        headlineBlockW,
+        padX,
+        headlineParAlign,
+      ),
       y: headlineTextY,
       maxWidth: headlineMaxWidth,
       fontSize: exportHeadlineFontSize,
       fontFamily: headlineFontCss,
       defaultColor: screenshot.textColor,
       lineHeight,
-      textAlign: "center",
+      textAlign: headlineParAlign,
       fontWeight: 700,
       letterSpacingEm: screenshot.headlineLetterSpacingEm,
     });
 
-    const subheadlineX = canvas.width * (screenshot.subheadlineX / 100);
-    const subheadlineTextY = canvas.height * (screenshot.subheadlineY / 100);
+    const subheadlineTextY =
+      canvas.height * (screenshot.subheadlineY / 100) + padY;
 
     drawRichText(ctx, screenshot.subheadline, {
-      x: subheadlineX,
+      x: richTextParagraphAnchorX(subLeft, subBlockW, padX, subParAlign),
       y: subheadlineTextY,
       maxWidth: subheadlineMaxWidth,
       fontSize: exportSubheadlineFontSize,
       fontFamily: subheadlineFontCss,
       defaultColor: screenshot.textColor,
       lineHeight,
-      textAlign: "center",
+      textAlign: subParAlign,
       fontWeight: 600,
       letterSpacingEm: screenshot.subheadlineLetterSpacingEm,
     });
